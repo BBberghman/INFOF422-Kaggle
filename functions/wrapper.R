@@ -18,16 +18,16 @@ wrapper <- function(X,Y){
                 X.ts<-X[i.ts,features_to_include,drop=F]  
                 Y.ts<-Y[i.ts]  
 
-                i.tr<-setdiff(1:N,i.ts)
-                X.tr<-X[i.tr,features_to_include,drop=F]
-                Y.tr<-Y[i.tr]
+                i.tr <- setdiff(1:N,i.ts)
+                X.tr <- X[i.tr,features_to_include,drop=F]
+                Y.tr <- Y[i.tr]
 
-                DS<-cbind(X.tr,imdb_score=Y.tr)
-                model<- lm(imdb_score~.,DS)
+                DS <- cbind(X.tr,imdb_score=Y.tr)
+                model <- lm(imdb_score~.,DS)
 
-                Y.hat.ts<- predict(model,X.ts)
+                Y.hat.ts <- predict(model,X.ts)
 
-                CV.err[j,i]<-mean((Y.hat.ts-Y.ts)^2)
+                CV.err[j,i] <- mean((Y.hat.ts-Y.ts)^2)
             }
         }
         
@@ -40,5 +40,8 @@ wrapper <- function(X,Y){
         print(paste("Round ",round," ; Selected feature: ",candidates[selected_current]," ; CV error = ",round(CV.err.mean[selected_current],digits=4), " ; std dev = ",round(CV.err.sd[selected_current],digits=4)))
     
     }
- return(selected)                 
+    
+    nb_features.best <- which.min(round(CV.err.mean[selected_current],digits=4))
+    print(nb_features.best)
+ return(selected[1:nb_features.best)                 
 }
