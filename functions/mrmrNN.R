@@ -1,4 +1,4 @@
-mrmr <- function(X,Y){
+mrmrNN <- function(X,Y){
     N<-nrow(X)
     n<-ncol(X)
     size.CV<-floor(N/10)
@@ -16,22 +16,26 @@ mrmr <- function(X,Y){
         i.tr<-setdiff(1:N,i.ts)
         X.tr<-X[i.tr,]
         Y.tr<-Y[i.tr]
-        
-        if (scale){
-            # scaling factors
-            X.center <- colMeans(X.tr)
-            X.scale <- apply(X.tr,2,sd)
-            Y.center <- mean(Y.tr)
-            Y.scale <- sd(Y.tr)
 
-            #scaling training set 
-            X.tr <-data.frame(scale(X.tr))
-            Y.tr <- scale(Y.tr) 
+        # scaling parameters
+        X.sc <- scale(X.tr)
+        X.sd <- attr(X.sc, 'scaled:scale')
+        X.mean <- attr(X.sc, 'scaled:center')
+        Y.sc <- scale(Y.tr)
+        Y.sd <- attr(Y.sc, 'scaled:scale')
+        Y.mean <- attr(Y.sc, 'scaled:center')
 
-            #scaling the testing test by the same scaling as of the training set
-            X.ts <- t(apply(sweep(X.ts,2,X.center,"-"), 1, function(x) x/X.scale))
-            X.ts <-data.frame(X.ts)
-        }
+        X.sc <- data.frame(X.sc)
+
+        # scaling testing set
+        if (dim(X.ts)[2] == 1){
+            X.ts.sc <- (X.ts - X.mean)/X.sd
+        }else {
+            X.ts.sc <- t(apply(sweep(X.ts,2,X.mean,"-"), 1, function(x) x/X.sd))
+                }
+        Y.ts.sc <- cbind(Y.ts - Y.mean)/Y.sd 
+        X.ts.sc <- data.frame(X.ts.sc)
+                            
         #correlation on training set
         correlation <- abs(cor(X.tr,Y.tr))
         correlation[is.na(correlation)] <- 0
@@ -60,10 +64,10 @@ mrmr <- function(X,Y){
         for (nb_features in 1:n) {
             #create model
             DS<-cbind(X.tr[,ranking[1:nb_features],drop=F],SalePrice=Y.tr)
-            model <- lm(SalePrice~.,DS)
+            model.nn <- nnet(SalePrice~.,DS, size = 2, linout=T, maxit = 500, trace=F)
             
             # infere value of Y.ts
-            Y.hat.ts <- predict(model,X.ts[,ranking[1:nb_features],drop=F])
+            Y.hat.ts <- predict(model.nn,X.ts[,ranking[1:nb_features],drop=F])
             
             if (scale){
                 # unscale Y.hat.ts
